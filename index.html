@@ -76,15 +76,18 @@
       gap: 5px;
     }
 
-    .item-input-row {
-      display: grid;
-      grid-template-columns: 1.4fr .55fr .75fr 34px;
-      gap: 7px;
-      align-items: center;
-      margin-bottom: 8px;
-    }
+   .item-input-row {
+  display: grid;
+  grid-template-columns: 1fr 58px 70px 36px;
+  gap: 7px;
+  align-items: center;
+  margin-bottom: 8px;
+}
 
-    .item-input-row input { margin-bottom: 0; }
+.item-input-row input {
+  min-width: 0;
+  width: 100%;
+}
 
     button {
       cursor: pointer;
@@ -308,9 +311,9 @@
       <div class="section">
         <h3>Invoice Details</h3>
         <label>Invoice No.</label>
-        <input id="invoiceNo" value="#123424" oninput="renderInvoice()">
+        <input id="invoiceNo" value="Auto Generated" readonly>
         <label>Invoice Date</label>
-        <input id="invoiceDate" value="12/23/2026" oninput="renderInvoice()">
+        <input id="invoiceDate" oninput="renderInvoice()">
       </div>
 
       <div class="section">
@@ -328,7 +331,7 @@
         <label>Name</label>
         <input id="toName" value="Hasan Mahmud" oninput="renderInvoice()">
         <label>Phone</label>
-        <input id="toPhone" value="017" oninput="renderInvoice()">
+        <input id="toPhone" type="tel" inputmode="numeric" pattern="[0-9]*" value="017" oninput="renderInvoice()">
         <label>Address</label>
         <textarea id="toAddress" oninput="renderInvoice()">House# 15, Road# 14,Sector 10, Uttra, Dhaka-1230</textarea>
       </div>
@@ -355,9 +358,10 @@
         <input id="vatPercent" type="number" value="5" oninput="renderInvoice()">
       </div>
 
-      <div class="section button-row">
-        <button class="btn-dark" onclick="downloadPDF()">Download PDF</button>
-        <button onclick="resetDemo()">Reset</button>
+      <div class="section">
+       <button id="saveBtn" class="btn-dark" onclick="saveOrder()">Save & Generate Invoice</button>
+      <button onclick="downloadPDF()">Print / PDF</button>
+      <button onclick="resetDemo()">Reset</button>
       </div>
     </section>
 
@@ -413,6 +417,10 @@
   </main>
 
   <script>
+    let isSaving = false;
+    const API_URL = "https://script.google.com/macros/s/AKfycbx1COxFgnc4nXM7Q-_lEU4JBLFe_qMCJBpemuHHQV1fL3Au3y0MRxYqFaI_PoCI-2v0/exec";
+    let productsFromDB = [];
+
     let items = [
       { name: 'Himsagor Premium Mango', qty: 5, price: 150 },
       { name: 'Langra Premium Mango', qty: 5, price: 150 },
@@ -512,6 +520,114 @@
       `;
     }
 
+    async function saveOrder() {
+
+      if (isSaving) {
+    alert("Order is already saving. Please wait.");
+    return;
+  }
+
+  isSaving = true;
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.disabled = true;
+  saveBtn.innerText = "Saving...";
+  const t = calculateTotals();
+
+  const orderData = {
+    customer_name: document.getElementById("toName").value,
+    mobile: document.getElementById("toPhone").value,
+    address: document.getElementById("toAddress").value,
+
+    subtotal: t.subtotal,
+    discount_percent: t.discountPercent,
+    discount_amount: t.discountAmount,
+    delivery_charge: t.deliveryCharge,
+    vat_percent: t.vatPercent,
+    vat_amount: t.vatAmount,
+    grand_total: t.total,
+
+    items: items.map(item => ({
+      item_name: item.name,
+      quantity: Number(item.qty || 0),
+      unit_price: Number(item.price || 0),
+      total_price: Number(item.qty || 0) * Number(item.price || 0)
+    }))
+  };
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(orderData)
+    });
+
+    const result = await response.json();
+
+    if (result.status === "success") {
+      document.getElementById("invoiceNo").value = result.invoice_no;
+      const today = new Date();
+  const formattedDate =
+  String(today.getDate()).padStart(2, '0') + '/' +
+  String(today.getMonth() + 1).padStart(2, '0') + '/' +
+  today.getFullYear();
+
+document.getElementById("invoiceDate").value = formattedDate;
+
+      renderInvoice();
+
+      alert("Order saved successfully. Invoice No: " + result.invoice_no);
+    } else {
+      alert("Order save failed.");
+    }
+
+  } catch (error) {
+    console.error(error);
+    alert("Error saving order. Please check Apps Script URL or deployment permission.");
+  }
+
+   finally {
+    isSaving = false;
+    saveBtn.disabled = false;
+    saveBtn.innerText = "Save & Generate Invoice";
+  }
+}
+
+//Data load from google sheet
+
+  async function loadDataFromSheet() {
+  try {
+    const response = await fetch(API_URL);
+    const result = await response.json();
+
+    console.log("Google Sheet Data:", result);
+
+    if (result.status === "success") {
+      productsFromDB = result.products || [];
+
+      document.getElementById("vatPercent").value = result.settings.vat_percent || 0;
+      document.getElementById("deliveryCharge").value = result.settings.delivery_charge || 0;
+      document.getElementById("discountPercent").value = result.settings.discount_percent || 0;
+
+      if (productsFromDB.length > 0) {
+        items = productsFromDB
+          .filter(p => p.stock_status === "Available")
+          .map(p => ({
+            name: p.product_name,
+            qty: 12,
+            price: Number(p.unit_price || 0)
+          }));
+      }
+
+      renderItemInputs();
+      renderInvoice();
+    }
+
+  } catch (error) {
+    console.error("Failed to load data from Google Sheet", error);
+  }
+}
+
+
+
     function downloadPDF() {
       // Offline method: Android/desktop browser print dialog.
       // Choose “Save as PDF” and paper size A4.
@@ -520,16 +636,27 @@
 
     function resetDemo() {
       items = [
-        { name: 'Eggshell Camisole Top', qty: 1, price: 123 },
-        { name: 'Cuban Collar Shirt', qty: 2, price: 127 },
-        { name: 'Floral Cotton Dress', qty: 1, price: 123 }
+        { name: 'Himsagor Premium Mango', qty: 12, price: 140 },
+        { name: 'Langra Premium Mango', qty: 12, price: 130 },
+        { name: 'Amropali Premium Mango', qty: 12, price: 140 }
       ];
+
       renderItemInputs();
       renderInvoice();
     }
 
+    window.addEventListener("load", function () {
+    const today = new Date();
+    const formattedDate =
+    String(today.getDate()).padStart(2, '0') + '/' +
+    String(today.getMonth() + 1).padStart(2, '0') + '/' +
+    today.getFullYear();
+
+document.getElementById("invoiceDate").value = formattedDate;
     renderItemInputs();
     renderInvoice();
+    loadDataFromSheet();
+});
   </script>
 </body>
 </html>
