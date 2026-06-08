@@ -422,9 +422,9 @@
     let productsFromDB = [];
 
     let items = [
-      { name: 'Himsagor Premium Mango', qty: 5, price: 150 },
-      { name: 'Langra Premium Mango', qty: 5, price: 150 },
-      { name: 'Amropali Premium Mango', qty: 5, price: 150 }
+      { name: 'Himsagor Premium Mango', qty: 10, price: 150 },
+      { name: 'Langra Premium Mango', qty: 10, price: 150 },
+      { name: 'Amropali Premium Mango', qty: 10, price: 150 }
     ];
 
     function money(value) {
@@ -612,7 +612,7 @@ document.getElementById("invoiceDate").value = formattedDate;
           .filter(p => p.stock_status === "Available")
           .map(p => ({
             name: p.product_name,
-            qty: 10,
+            qty: Number(10),
             price: Number(p.unit_price || 0)
           }));
       }
