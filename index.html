@@ -444,7 +444,7 @@
         row.className = 'item-input-row';
         row.innerHTML = `
           <input value="${item.name}" oninput="updateItem(${index}, 'name', this.value)">
-          <input type="number" value="${item.quantity}" oninput="updateItem(${index}, 'qty', this.value)">
+          <input type="number" value="${item.qty}" oninput="updateItem(${index}, 'qty', this.value)">
           <input type="number" value="${item.price}" oninput="updateItem(${index}, 'price', this.value)">
           <button class="btn-red" onclick="removeItem(${index})">×</button>
         `;
@@ -548,7 +548,7 @@
 
     items: items.map(item => ({
       item_name: item.name,
-      quantity: Number(10 || 0),
+      quantity: Number(item.qty || 0),
       unit_price: Number(item.price || 0),
       total_price: Number(item.qty || 0) * Number(item.price || 0)
     }))
@@ -612,7 +612,7 @@ document.getElementById("invoiceDate").value = formattedDate;
           .filter(p => p.stock_status === "Available")
           .map(p => ({
             name: p.product_name,
-            qty: 10,
+            qty: 12,
             price: Number(p.unit_price || 0)
           }));
       }
