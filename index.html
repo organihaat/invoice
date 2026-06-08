@@ -612,7 +612,7 @@ document.getElementById("invoiceDate").value = formattedDate;
           .filter(p => p.stock_status === "Available")
           .map(p => ({
             name: p.product_name,
-            qty: 12,
+            qty: 10,
             price: Number(p.unit_price || 0)
           }));
       }
