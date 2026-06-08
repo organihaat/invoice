@@ -444,7 +444,7 @@
         row.className = 'item-input-row';
         row.innerHTML = `
           <input value="${item.name}" oninput="updateItem(${index}, 'name', this.value)">
-          <input type="number" value="10" oninput="updateItem(${index}, 'qty', this.value)">
+          <input type="number" value="${item.quantity}" oninput="updateItem(${index}, 'qty', this.value)">
           <input type="number" value="${item.price}" oninput="updateItem(${index}, 'price', this.value)">
           <button class="btn-red" onclick="removeItem(${index})">×</button>
         `;
